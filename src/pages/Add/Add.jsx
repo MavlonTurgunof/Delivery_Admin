@@ -2,10 +2,10 @@ import { useState } from "react";
 import { assets } from "../../admin_assets/assets";
 import "./Add.css";
 import axios from "axios";
+import { url } from "./../../server/server.js";
 import { toast } from "react-toastify";
 
 function Add() {
-  const url = "http://localhost:4000";
   const [image, setImage] = useState(false);
   const [data, setData] = useState({
     name: "",
