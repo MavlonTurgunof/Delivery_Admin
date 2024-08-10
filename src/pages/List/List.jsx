@@ -2,10 +2,16 @@ import { useEffect, useState } from "react";
 import "./List.css";
 import { url } from "./../../server/server.js";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 function List() {
   const [list, setList] = useState([]);
+  const navigate = useNavigate();
+
+  const edit = (food) => {
+    navigate("/add", { state: { food } });
+  };
 
   const fetchList = async () => {
     const response = await axios.get(`${url}/api/food/list`);
@@ -41,6 +47,7 @@ function List() {
           <b>Category</b>
           <b>Price</b>
           <b>Action</b>
+          <b>Edit</b>
         </div>
         {list.length === 0 ? (
           <p>No items to display</p>
@@ -53,6 +60,9 @@ function List() {
               <p>${item.price}</p>
               <p onClick={() => removeFood(item._id)} className="cursor">
                 X
+              </p>
+              <p onClick={() => edit(item)} className="pen">
+                🖊
               </p>
             </div>
           ))

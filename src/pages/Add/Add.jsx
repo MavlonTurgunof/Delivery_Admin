@@ -1,11 +1,51 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { assets } from "../../admin_assets/assets";
 import "./Add.css";
 import axios from "axios";
 import { url } from "./../../server/server.js";
 import { toast } from "react-toastify";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function Add() {
+  // const [image, setImage] = useState(false);
+  // const [data, setData] = useState({
+  //   name: "",
+  //   description: "",
+  //   price: "",
+  //   category: "Salad",
+  // });
+
+  // const onChangeHandler = (event) => {
+  //   const name = event.target.name;
+  //   const value = event.target.value;
+  //   setData((data) => ({ ...data, [name]: value }));
+  // };
+
+  // const onSubmitHandler = async (event) => {
+  //   event.preventDefault();
+  //   const formData = new FormData();
+  //   formData.append("name", data.name);
+  //   formData.append("description", data.description);
+  //   formData.append("price", Number(data.price));
+  //   formData.append("category", data.category);
+  //   formData.append("image", image);
+  //   const response = await axios.post(`${url}/api/food/add`, formData);
+  //   if (response.data.success) {
+  //     setData({
+  //       name: "",
+  //       description: "",
+  //       price: "",
+  //       category: "Salad",
+  //     });
+  //     setImage(false);
+  //     toast.success(response.data.message);
+  //   } else {
+  //     throw new Error("Adding fail");
+  //   }
+  // };
+
+  const location = useLocation();
+  const navigate = useNavigate();
   const [image, setImage] = useState(false);
   const [data, setData] = useState({
     name: "",
@@ -14,9 +54,20 @@ function Add() {
     category: "Salad",
   });
 
+  useEffect(() => {
+    if (location.state && location.state.food) {
+      setData({
+        name: location.state.food.name,
+        description: location.state.food.description,
+        price: location.state.food.price,
+        category: location.state.food.category,
+      });
+      setImage(location.state.food.image);
+    }
+  }, [location.state]);
+
   const onChangeHandler = (event) => {
-    const name = event.target.name;
-    const value = event.target.value;
+    const { name, value } = event.target;
     setData((data) => ({ ...data, [name]: value }));
   };
 
@@ -28,18 +79,33 @@ function Add() {
     formData.append("price", Number(data.price));
     formData.append("category", data.category);
     formData.append("image", image);
-    const response = await axios.post(`${url}/api/food/add`, formData);
-    if (response.data.success) {
-      setData({
-        name: "",
-        description: "",
-        price: "",
-        category: "Salad",
-      });
-      setImage(false);
-      toast.success(response.data.message);
-    } else {
-      throw new Error("Adding fail");
+
+    try {
+      let response;
+      if (location.state && location.state.food) {
+        response = await axios.put(
+          `${url}/api/food/${location.state.food._id}`,
+          formData
+        );
+      } else {
+        response = await axios.post(`${url}/api/food/add`, formData);
+      }
+
+      if (response.data.success) {
+        setData({
+          name: "",
+          description: "",
+          price: "",
+          category: "Salad",
+        });
+        setImage(false);
+        toast.success(response.data.message);
+        navigate("/list");
+      } else {
+        throw new Error("Submission failed");
+      }
+    } catch (err) {
+      toast.error("Error submitting form");
     }
   };
 
@@ -50,7 +116,13 @@ function Add() {
           <p>Upload Image</p>
           <label htmlFor="image">
             <img
-              src={image ? URL.createObjectURL(image) : assets.upload_area}
+              src={
+                image
+                  ? typeof image === "string"
+                    ? `${url}/images/${image}`
+                    : URL.createObjectURL(image)
+                  : assets.upload_area
+              }
               alt=""
             />
           </label>
@@ -59,7 +131,6 @@ function Add() {
             type="file"
             id="image"
             hidden
-            required
           />
         </div>
         <div className="add-product-name flex-col">
@@ -86,7 +157,11 @@ function Add() {
         <div className="add-category-price">
           <div className="add-category flex-col">
             <p>Product category</p>
-            <select onChange={onChangeHandler} name="category">
+            <select
+              onChange={onChangeHandler}
+              name="category"
+              value={data.category}
+            >
               <option value="Salad">Salad</option>
               <option value="Rolls">Rolls</option>
               <option value="Deserts">Deserts</option>
@@ -109,7 +184,7 @@ function Add() {
           </div>
         </div>
         <button type="submit" className="add-btn">
-          ADD
+          {location.state && location.state.food ? "Update" : "Add"}
         </button>
       </form>
     </div>
